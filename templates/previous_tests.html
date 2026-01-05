@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Test History - Epi Scan</title>
+    <link href="../static/assets/favicon.ico" rel="icon">
+    <link href="../static/assets/apple-touch-icon.png" rel="apple-touch-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../static/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/assets/css/main.css" rel="stylesheet">
+    <style>
+        /* Add your existing styles here */
+        .test-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* Add chat styling */
+        .chat-container {
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+        }
+
+        .user-message {
+            font-weight: bold;
+        }
+
+        .gemini-reply {
+            color: #007bff;
+        }
+
+        .chatbox {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+        }
+
+        .input-group {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+        }
+         /* Style the Gemini response */
+    .gemini-reply {
+        background-color: #f1f1f1;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 5px;
+    }
+
+    /* Styling for formatted list in Gemini's response */
+    .gemini-response-list {
+        padding-left: 20px;
+        list-style-type: disc;
+    }
+
+    /* Optional: Add some margin between each list item */
+    .gemini-response-list li {
+        margin-bottom: 5px;
+    }
+
+    /* Voice input button styles */
+    .voice-btn {
+        cursor: pointer;
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 0 4px 4px 0;
+        padding: 0.375rem 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .voice-btn.listening {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .voice-btn i {
+        font-size: 1.2rem;
+    }
+
+    .input-group-append {
+        margin-left: -1px;
+    }
+    </style>
+</head>
+
+<body>
+    <header id="header" class="header d-flex align-items-center fixed-top">
+        <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
+            <a href="{{ url_for('first') }}" class="logo d-flex align-items-center">
+                <h1 class="sitename">Epi Scan</h1> <span>.</span>
+            </a>
+            <nav id="navmenu" class="navmenu">
+                <ul>
+                    <li><a href="{{url_for('first')}}">Home</a></li>
+                    <li><a href="{{url_for('index')}}">Upload</a></li>
+                    <li><a href="{{url_for('previous')}}">Previous Test</a></li>
+                    <li><a href="{{url_for('first')}}">Logout</a></li>
+                </ul>
+                <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="page-title" data-aos="fade">
+            <div class="container position-relative">
+                <h1>Your Test History</h1>
+                <nav class="breadcrumbs">
+                    <ol>
+                        <li><a href="{{ url_for('index') }}">Home</a></li>
+                        <li class="current">Test History</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <section class="section">
+            <div class="container">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2><i class="bi bi-clock-history me-2"></i>Previous Tests</h2>
+                            <span class="badge bg-primary">{{ tests|length }} tests</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if tests %}
+                <div class="row">
+                    {% for test in tests %}
+                    <div class="col-lg-4 col-md-6">
+                        <div class="test-card">
+                            <div class="test-image">
+                                <img src="{{ url_for('static', filename='tests/' + test.image_filename) }}"
+                                     alt="Skin lesion image"
+                                     class="img-fluid">
+                            </div>
+                            <div class="test-body">
+                                <h5>{{ test.patient_name }}</h5>
+                                <p class="test-date">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {{ test.formatted_date }}
+                                </p>
+                                <div class="test-result
+                                    {% if test.result == 'Melanoma' %}result-melanoma
+                                    {% elif test.result in ['Basal cell carcinoma', 'Actinic keratoses'] %}result-warning
+                                    {% else %}result-benign{% endif %}">
+                                    {{ test.result }}
+                                </div>
+                                <div class="action-buttons mt-3">
+                                    <a href="{{ url_for('static', filename='reports/' + test.pdf_filename.split('/')[-1]) }}"
+                                       target="_blank"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i> View Report
+                                    </a>
+                                    <a href="{{ url_for('static', filename='reports/' + test.pdf_filename.split('/')[-1]) }}"
+                                       download
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-download me-1"></i> Download
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-info mt-2"
+                                            onclick="openChat('{{ test.patient_name }}', '{{ test.result }}')">
+                                        <i class="bi bi-chat-dots me-1"></i> Discuss Result
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-folder-x"></i>
+                    <h3>No Tests Found</h3>
+                    <p class="text-muted">You haven't submitted any skin lesion tests yet.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle me-1"></i> Submit New Test
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="modal fade" id="geminiChatModal" tabindex="-1" aria-labelledby="geminiChatModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="geminiChatModalLabel">Discuss Test Result</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong id="chat-patient-name"></strong> - Result: <span id="chat-test-result" class="fw-bold"></span></p>
+                        <div id="chatbox" class="chatbox">
+                            </div>
+                        <div class="input-group">
+                            <input type="text" id="user-input" class="form-control" placeholder="Ask a question about the result">
+                            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                            <div class="input-group-append">
+                                <span class="voice-btn" id="voice-btn" title="Voice Input">
+                                    <i class="bi bi-mic"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div id="voice-status" class="text-muted small mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer id="footer" class="footer">
+        <div class="container footer-top">
+            <div class="row gy-4">
+                <div class="col-lg-4 col-md-6 footer-about">
+                    <a href="{{ url_for('first') }}" class="logo d-flex align-items-center">
+                        <span class="sitename">Epi Scan</span>
+                    </a>
+                    <div class="mt-2">
+                        <p>Advanced skin lesion analysis powered by AI</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container copyright text-center mt-4">
+            <p>© <span>Copyright</span> <strong class="px-1 sitename">Epi Scan</strong> <span>All Rights Reserved</span></p>
+        </div>
+    </footer>
+
+    <script src="../static/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    let currentPatientName = '';
+    let currentTestResult = '';
+    const chatbox = document.getElementById('chatbox');
+    const userInput = document.getElementById('user-input');
+    const chatPatientNameDisplay = document.getElementById('chat-patient-name');
+    const chatTestResultDisplay = document.getElementById('chat-test-result');
+    const chatModal = new bootstrap.Modal(document.getElementById('geminiChatModal'));
+    const voiceBtn = document.getElementById('voice-btn');
+    const voiceStatus = document.getElementById('voice-status');
+
+    // Check if browser supports speech recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = function() {
+            voiceBtn.classList.add('listening');
+            voiceStatus.textContent = "Listening... Speak now.";
+        };
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+            voiceStatus.textContent = "Voice input received.";
+        };
+
+        recognition.onerror = function(event) {
+            voiceBtn.classList.remove('listening');
+            voiceStatus.textContent = "Error occurred in recognition: " + event.error;
+        };
+
+        recognition.onend = function() {
+            voiceBtn.classList.remove('listening');
+            if (userInput.value.trim()) {
+                sendMessage();
+            }
+        };
+    } else {
+        voiceBtn.style.display = 'none';
+        voiceStatus.textContent = "Voice input not supported in this browser.";
+    }
+
+    function toggleVoiceInput() {
+        if (!recognition) {
+            voiceStatus.textContent = "Voice recognition not supported in your browser.";
+            return;
+        }
+
+        try {
+            if (voiceBtn.classList.contains('listening')) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        } catch (e) {
+            voiceStatus.textContent = "Error: " + e.message;
+        }
+    }
+
+    // Add event listener for voice button
+    voiceBtn.addEventListener('click', toggleVoiceInput);
+
+    // Allow pressing Enter key to send message
+    userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    function openChat(patientName, testResult) {
+        currentPatientName = patientName;
+        currentTestResult = testResult;
+        chatPatientNameDisplay.textContent = patientName;
+        chatTestResultDisplay.textContent = testResult;
+        chatbox.innerHTML = ''; // Clear previous chat
+
+        // Add initial greeting from Gemini
+        appendMessage('gemini', `Hello! I can help you understand the test result for ${patientName}. The diagnosis is <strong>${testResult}</strong>. What would you like to know?`);
+
+        chatModal.show();
+    }
+
+    async function sendMessage() {
+        const message = userInput.value.trim();
+        if (message) {
+            appendMessage('user', message);
+            userInput.value = '';
+            voiceStatus.textContent = "";
+
+            // Show loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.classList.add('gemini-reply');
+            loadingDiv.innerHTML = '<p><i class="bi bi-arrow-clockwise spin"></i> Thinking...</p>';
+            chatbox.appendChild(loadingDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            try {
+                // Replace with your actual Gemini API endpoint and logic
+                const geminiResponse = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        patient_name: currentPatientName,
+                        test_result: currentTestResult,
+                        user_message: message,
+                    }),
+                });
+
+                // Remove loading indicator
+                chatbox.removeChild(loadingDiv);
+
+                if (geminiResponse.ok) {
+                    const data = await geminiResponse.json();
+                    appendMessage('gemini', formatGeminiResponse(data.reply));
+                } else {
+                    appendMessage('gemini', 'Error communicating with AI. Please try again later.');
+                }
+            } catch (error) {
+                // Remove loading indicator
+                chatbox.removeChild(loadingDiv);
+                appendMessage('gemini', 'Sorry, there was an error processing your request. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+    }
+
+    function appendMessage(sender, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chat-message');
+        if (sender === 'user') {
+            messageDiv.classList.add('user-message');
+            messageDiv.textContent = `You: ${text}`;
+        } else if (sender === 'gemini') {
+            messageDiv.classList.add('gemini-reply');
+            messageDiv.innerHTML = `AI Assistant: ${text}`; // Use innerHTML to support formatted text
+        }
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight; // Scroll to the bottom
+    }
+
+    function formatGeminiResponse(response) {
+        // Convert Markdown to HTML (for bold, italic, etc.)
+        let formattedResponse = response;
+        formattedResponse = formattedResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold text
+        formattedResponse = formattedResponse.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Italics text
+
+        // Check if the response includes newlines, indicating a multi-line response
+        if (formattedResponse.includes('\n')) {
+            // Split response into individual lines
+            const responseLines = formattedResponse.split('\n').map(line => {
+                line = line.trim(); // Remove leading/trailing spaces
+                // Only add non-empty lines as list items
+                return line ? `<li>${line}</li>` : ''; // Only add non-empty lines
+            }).filter(line => line !== '').join(''); // Remove empty strings and join
+
+            return `<ul class="gemini-response-list">${responseLines}</ul>`;
+        }
+
+        // If it's a single line, return it wrapped in a paragraph tag
+        return `<p>${formattedResponse}</p>`;
+    }
+
+    // Add spin animation for loading icon
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spin {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+
+<style>
+    .gemini-response-list {
+        list-style-type: disc; /* Ensures that bullet points are displayed */
+        margin-left: 20px; /* Adjust the indentation for better readability */
+        padding: 0; /* Remove any extra padding for cleaner formatting */
+    }
+
+    .gemini-response-list li {
+        margin-bottom: 5px; /* Adds space between list items */
+    }
+
+    .chat-message {
+        margin-bottom: 10px;
+    }
+
+    .gemini-reply {
+        color: #333; /* You can customize the color of Gemini's reply */
+    }
+
+    .user-message {
+        color: #007bff; /* You can customize the color of user's message */
+    }
+</style>
+</body>
+</html>
